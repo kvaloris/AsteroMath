@@ -100,14 +100,6 @@ def draw_shield_bar(surf, x, y, pct):
     fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
     pygame.draw.rect(surf, GREEN, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
-
-#définition des vies du joueur avec les images du vaisseau    
-def draw_lives(surf, x, y, lives, img):
-    for i in range(lives):
-        img_rect = img.get_rect()
-        img_rect.x = x + 30 * i
-        img_rect.y = y
-        surf.blit(img, img_rect)
         
 #définition d'unécran explicatif
 def show_go_screen():
@@ -150,11 +142,13 @@ class Player(pygame.sprite.Sprite):
         self.image= player_img
         self.image.set_colorkey(BLACK)
         self.shoot_delay = 250
-        self.lives = 3
         self.hidden = False
         self.last_shot = pygame.time.get_ticks()
         self.power = 1
         self.power_time = pygame.time.get_ticks()
+
+        #définition de la précision
+        self.accuracy = 0.6
 
     def update(self):
         #pause pour les bonus
@@ -249,6 +243,9 @@ class Ennemi(pygame.sprite.Sprite):
         self.rot = 0
         self.rot_speed = random.randrange(-8, 8)
         self.last_update = pygame.time.get_ticks()
+
+        #définition des points d'attaque
+        self.attack = 20
     
 #permet de faire tourner la météorite    
     def rotate(self):
@@ -340,7 +337,7 @@ Ennemis= pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 player = Player()
 all_sprites.add(player)
-#ennemi = Ennemi()
+ennemi = Ennemi()
 #all_sprites.add(ennemi)
 for i in range (8):
     newEnnemi()
@@ -415,7 +412,7 @@ while running:
     hits = pygame.sprite.spritecollide(player, Ennemis, True, pygame.sprite.collide_circle)
     #vérifie s'il y a une collision
     for hit in hits:
-        player.shield -= hit.radius * 2
+        player.shield -= ennemi.attack
         expl = Explosion(hit.rect.center, 'sm')
         all_sprites.add(expl)
         newEnnemi()
@@ -424,12 +421,7 @@ while running:
             death_explosion = Explosion(player.rect.center, 'player')
             all_sprites.add(death_explosion)
             player.hide()
-            player.lives -= 1
-            player.shield = 100
             player_explosion_sound.play()
-        # si le joueur meurt et les explosions finissent
-        if player.lives == 0 and not death_explosion.alive():
-            #permet de lancer la condition du game over
             game_over = True
             
     # vérifie si le joueur heurte un bonus
@@ -437,11 +429,11 @@ while running:
     #vérifie s'il y a une collision
     for hit in hits:
         #augmente le bouclier si le bonus est de type bouclier
-        if hit.type == 'shield':
-            player.shield += random.randrange(10, 30)
-            if player.shield >= 100:
-                player.shield = 100
-            shield_sound.play()
+        #if hit.type == 'shield':
+            #player.shield += random.randrange(10, 30)
+            #if player.shield >= 100
+                #player.shield = 100
+            #shield_sound.play()
         #augmente la puissance du tir si le bonus est de type tir
         if hit.type == 'gun':
             player.powerup()
@@ -453,8 +445,8 @@ while running:
     screen.blit(background, background_rect)
     all_sprites.draw(screen)
     draw_text(screen, str(score), 18, WIDTH / 2, 10)
+    draw_text(screen, str(player.shield), 18, 130, 0)
     draw_shield_bar(screen, 5, 5, player.shield)
-    draw_lives(screen, WIDTH - 100, 5, player.lives, player_mini_img)
     # mise à jour de l'affichage
     pygame.display.flip()
 
