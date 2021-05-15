@@ -257,7 +257,7 @@ class Player(pygame.sprite.Sprite):
             print("a acheté une amélioration en précision coûtant ", cost, "pts")
     
     def buyStrength(self):
-        cost = round(np.exp(self.strength*0.35))
+        cost = round(np.exp(self.strength*0.1))
         if(cost > self.money):
             print("pas assez d'argent, manque ", cost-self.money, " pts")
         else:
@@ -276,6 +276,139 @@ class Player(pygame.sprite.Sprite):
         r = random.random()
         self.attack = getResult(r, results, probabilities)
         return self.attack
+
+#création d'un sprite pour l'astéroïde          
+class Ennemi(pygame.sprite.Sprite):
+    def __init__(self, max_health, attack, images):
+        #self est une convention de python pour le premier paramètre d'une instance
+        pygame.sprite.Sprite.__init__(self)
+        
+        #définition de la taille du rectangle
+        self.image = pygame.Surface((30, 40))
+        
+        #couleur de l'élément
+        self.image.fill(RED)
+        self.rect = self.image.get_rect()
+        self.radius = int(self.rect.width * .85 / 2)
+        #définition de la position du rectangle (vaisseau)
+        self.rect.x = random.randrange(WIDTH - self.rect.width)
+        self.rect.y = random.randrange(-80,-20)
+        self.speedy = random.randrange(1,8)
+        self.speedx = random.randrange(-3,3)
+        #choisit une image dans la liste et l'attribut à la météorite créée
+        self.image_orig = random.choice(images)
+        self.image.set_colorkey(BLACK)
+        self.image = self.image_orig.copy()
+        self.rot = 0
+        self.rot_speed = random.randrange(-8, 8)
+        self.last_update = pygame.time.get_ticks()
+        
+        #AJOUTE
+        #définition des points d'attaque et des points de vie
+        self.max_health = max_health
+        self.health = max_health
+        self.attack = attack
+        # self.attack = 20
+
+#permet de faire tourner la météorite    
+    def rotate(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > 50:
+            self.last_update = now
+            self.rot = (self.rot + self.rot_speed) % 360
+            new_image = pygame.transform.rotate(self.image_orig, self.rot)
+            old_center = self.rect.center
+            self.image = new_image
+            self.rect = self.image.get_rect()
+            self.rect.center = old_center
+        
+    def update(self):
+        self.rotate()
+        self.rect.x += self.speedx
+        self.rect.y += self.speedy
+        #AJOUTE
+        # draw_shield_bar(screen, self.rect.x, self.rect.y, 10)
+        # self.health_bar.update(self.health, 20, 20)
+        if self.rect.top > HEIGHT + 10 or self.rect.left < -100 or self.rect.right > WIDTH + 100:
+            self.rect.x = random.randrange(WIDTH - self.rect.width)
+            self.rect.y = random.randrange(-100, -40)
+            self.speedy = random.randrange(1, 8)
+
+    #AJOUTE
+    #dessine la barre de vie
+    def draw_bar(self):
+        draw_shield_bar(screen, self.rect.x, self.rect.y - 15 , self.health, self.max_health)
+        draw_text(screen, str(ennemi.health), 18, self.rect.x + 120, self.rect.y - 20)
+
+#Création de sprites pour les tirs           
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        #On remplace le rectangle jaune par une image
+        self.image= bullet_img
+        #self.image = pygame.Surface((10, 20))
+        self.image.set_colorkey(BLACK) 
+        #self.image.fill(YELLOW)
+        self.rect = self.image.get_rect()
+        self.rect.bottom = y
+        self.rect.centerx = x
+        self.speedy = -10
+        
+
+    def update(self):
+        self.rect.y += self.speedy
+        # kill if it moves off the top of the screen
+        if self.rect.bottom < 0:
+            self.kill()
+  
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, center, size):
+        pygame.sprite.Sprite.__init__(self)
+        self.size = size
+        self.image = explosion_anim[self.size][0]
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+        self.frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.frame_rate = 50
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_rate:
+            self.last_update = now
+            self.frame += 1
+            if self.frame == len(explosion_anim[self.size]):
+                self.kill()
+            else:
+                center = self.rect.center
+                self.image = explosion_anim[self.size][self.frame]
+                self.rect = self.image.get_rect()
+                self.rect.center = center
+
+#création de sprites pour les bonus                
+class Bonus(pygame.sprite.Sprite):
+    def __init__(self, center):
+        pygame.sprite.Sprite.__init__(self)
+        self.type = random.choice(['shield', 'gun'])
+        self.image = powerup_images[self.type]
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+        self.speedy = 2
+
+    def update(self):
+        self.rect.y += self.speedy
+        # kill if it moves off the bottom of the screen
+        if self.rect.top > HEIGHT:
+            self.kill()
+
+# FONCTIONS AJOUTES PAR NATACHA 
+
+def createMinion():
+    return Ennemi(50, 20, meteor_images)
+
+def createBoss():
+    return Ennemi(400, 50, boss_images)
 
 #AJOUTE
 def getResult(random, array_results, array_probabilities):
@@ -401,137 +534,6 @@ def show_stats_screen():
                 if event.key == pygame.K_KP_ENTER:
                     waiting = False
 
-#création d'un sprite pour l'astéroïde          
-class Ennemi(pygame.sprite.Sprite):
-    def __init__(self, max_health, attack, images):
-        #self est une convention de python pour le premier paramètre d'une instance
-        pygame.sprite.Sprite.__init__(self)
-        
-        #définition de la taille du rectangle
-        self.image = pygame.Surface((30, 40))
-        
-        #couleur de l'élément
-        self.image.fill(RED)
-        self.rect = self.image.get_rect()
-        self.radius = int(self.rect.width * .85 / 2)
-        #définition de la position du rectangle (vaisseau)
-        self.rect.x = random.randrange(WIDTH - self.rect.width)
-        self.rect.y = random.randrange(-80,-20)
-        self.speedy = random.randrange(1,8)
-        self.speedx = random.randrange(-3,3)
-        #choisit une image dans la liste et l'attribut à la météorite créée
-        self.image_orig = random.choice(images)
-        self.image.set_colorkey(BLACK)
-        self.image = self.image_orig.copy()
-        self.rot = 0
-        self.rot_speed = random.randrange(-8, 8)
-        self.last_update = pygame.time.get_ticks()
-        
-        #AJOUTE
-        #définition des points d'attaque et des points de vie
-        self.max_health = max_health
-        self.health = max_health
-        self.attack = attack
-        # self.attack = 20
-
-#permet de faire tourner la météorite    
-    def rotate(self):
-        now = pygame.time.get_ticks()
-        if now - self.last_update > 50:
-            self.last_update = now
-            self.rot = (self.rot + self.rot_speed) % 360
-            new_image = pygame.transform.rotate(self.image_orig, self.rot)
-            old_center = self.rect.center
-            self.image = new_image
-            self.rect = self.image.get_rect()
-            self.rect.center = old_center
-        
-    def update(self):
-        self.rotate()
-        self.rect.x += self.speedx
-        self.rect.y += self.speedy
-        #AJOUTE
-        # draw_shield_bar(screen, self.rect.x, self.rect.y, 10)
-        # self.health_bar.update(self.health, 20, 20)
-        if self.rect.top > HEIGHT + 10 or self.rect.left < -100 or self.rect.right > WIDTH + 100:
-            self.rect.x = random.randrange(WIDTH - self.rect.width)
-            self.rect.y = random.randrange(-100, -40)
-            self.speedy = random.randrange(1, 8)
-
-    #AJOUTE
-    #dessine la barre de vie
-    def draw_bar(self):
-        draw_shield_bar(screen, self.rect.x, self.rect.y - 15 , self.health, self.max_health)
-        draw_text(screen, str(ennemi.health), 18, self.rect.x + 120, self.rect.y - 20)
-
-def createMinion():
-    return Ennemi(50, 20, meteor_images)
-
-def createBoss():
-    return Ennemi(400, 50, boss_images)
-
-#Création de sprites pour les tirs           
-class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        pygame.sprite.Sprite.__init__(self)
-        #On remplace le rectangle jaune par une image
-        self.image= bullet_img
-        #self.image = pygame.Surface((10, 20))
-        self.image.set_colorkey(BLACK) 
-        #self.image.fill(YELLOW)
-        self.rect = self.image.get_rect()
-        self.rect.bottom = y
-        self.rect.centerx = x
-        self.speedy = -10
-        
-
-    def update(self):
-        self.rect.y += self.speedy
-        # kill if it moves off the top of the screen
-        if self.rect.bottom < 0:
-            self.kill()
-  
-class Explosion(pygame.sprite.Sprite):
-    def __init__(self, center, size):
-        pygame.sprite.Sprite.__init__(self)
-        self.size = size
-        self.image = explosion_anim[self.size][0]
-        self.rect = self.image.get_rect()
-        self.rect.center = center
-        self.frame = 0
-        self.last_update = pygame.time.get_ticks()
-        self.frame_rate = 50
-
-    def update(self):
-        now = pygame.time.get_ticks()
-        if now - self.last_update > self.frame_rate:
-            self.last_update = now
-            self.frame += 1
-            if self.frame == len(explosion_anim[self.size]):
-                self.kill()
-            else:
-                center = self.rect.center
-                self.image = explosion_anim[self.size][self.frame]
-                self.rect = self.image.get_rect()
-                self.rect.center = center
-
-#création de sprites pour les bonus                
-class Bonus(pygame.sprite.Sprite):
-    def __init__(self, center):
-        pygame.sprite.Sprite.__init__(self)
-        self.type = random.choice(['shield', 'gun'])
-        self.image = powerup_images[self.type]
-        self.image.set_colorkey(BLACK)
-        self.rect = self.image.get_rect()
-        self.rect.center = center
-        self.speedy = 2
-
-    def update(self):
-        self.rect.y += self.speedy
-        # kill if it moves off the bottom of the screen
-        if self.rect.top > HEIGHT:
-            self.kill()
- 
 
 #création de groupes pour lancer les éléments dans la fenêtre
 all_sprites = pygame.sprite.Group()
@@ -650,7 +652,7 @@ while running:
     hits = pygame.sprite.spritecollide(player, Ennemis, True, pygame.sprite.collide_circle)
     #vérifie s'il y a une collision
     for hit in hits:
-        player.shield -= 500 #ennemi.attack
+        player.shield -= ennemi.attack
         expl = Explosion(hit.rect.center, 'sm')
         all_sprites.add(expl)
         # newEnnemi()
