@@ -1,5 +1,6 @@
 # Frozen Jam by tgfcoder <https://twitter.com/tgfcoder> licensed under CC-BY-3
 # Art from Kenney.nl
+from numpy.lib.stride_tricks import DummyArray
 import pygame
 import random
 import os
@@ -49,9 +50,13 @@ player_mini_img = pygame.transform.scale(player_img, (25, 19))
 player_mini_img.set_colorkey(BLACK)
 #création d'une liste comportant diverses images de météorites
 meteor_images = []
-meteor_list = ['meteor.png', 'meteor2.png', 'meteor6.png', 'meteor7.png', 'meteor5.png', 'meteor8.png', 'meteor9.png', 'meteor10.png', 'meteor11.png']
+boss_images = []
+meteor_list = ['meteor.png', 'meteor7.png', 'meteor6.png', 'meteor8.png', 'meteor9.png', 'meteor10.png', 'meteor11.png']
+boss_list = ['meteor2.png', 'meteor3.png', 'meteor4.png', 'meteor5.png']
 for img in meteor_list:
-    meteor_images.append(pygame.image.load(os.path.join(img_folder, img)).convert_alpha()) 
+    meteor_images.append(pygame.image.load(os.path.join(img_folder, img)).convert_alpha())
+for img in boss_list:
+    boss_images.append(pygame.image.load(os.path.join(img_folder, img)).convert_alpha()) 
 #Mise en place des ressources, des sprites pour l'animation des différentes explosions des météorites   
 explosion_anim = {}
 #liste pour les grosses météorites
@@ -112,7 +117,7 @@ def draw_shield_bar(surf, x, y, pct, max):
 #définition d'unécran explicatif
 def show_go_screen():
     screen.blit(background, background_rect)
-    draw_text(screen, "IT'S A TRAP!", 64, WIDTH / 2, HEIGHT / 4)
+    draw_text(screen, "C'EST BALAUD", 64, WIDTH / 2, HEIGHT / 4)
     draw_text(screen, "Flèches pour se déplacer, Espace pour tirer", 22,
               WIDTH / 2, HEIGHT / 2)
     draw_text(screen, "Appuyez sur une touche pour commencer", 18, WIDTH / 2, HEIGHT * 3 / 4)
@@ -155,9 +160,11 @@ class Player(pygame.sprite.Sprite):
         self.power = 1
         self.power_time = pygame.time.get_ticks()
 
-        #définition de la précision
+        #définition de la précision, attaque, argent
         self.accuracy = 0.6
-        self.attack = 10
+        self.strength = 10
+        self.attack = 0
+        self.money = 0
 
     def update(self):
         #pause pour les bonus
@@ -188,7 +195,18 @@ class Player(pygame.sprite.Sprite):
         if event[pygame.K_SPACE]:
             player.setAttack()
             self.shoot()
-        
+        #AJOUTE
+        clock.tick(FPS)
+        for event2 in pygame.event.get():
+            if event2.type == pygame.KEYUP:
+                #Achète une amélioration de précision
+                if event2.key == pygame.K_KP1:
+                    self.buyAccuracy()
+                #Achète une amélioration d'attaque
+                if event2.key == pygame.K_KP2:
+                    self.buyStrength()
+
+    
         #Garder l'objet dans l'écran
         if self.rect.left < 0 :
             self.rect.left = 0
@@ -227,10 +245,33 @@ class Player(pygame.sprite.Sprite):
         self.hide_timer = pygame.time.get_ticks()
         self.rect.center = (WIDTH / 2, HEIGHT + 200)
 
+    def buyAccuracy(self):
+        cost = round(np.exp(self.accuracy*5))
+        if(cost > self.money):
+            print("pas assez d'argent, manque ", cost-self.money, " pts")
+        elif(self.accuracy>=0.95):
+            print("Précision maximale. Amélioration impossible")
+        else:
+            self.accuracy+= 0.05
+            self.money -= cost
+            print("a acheté une amélioration en précision coûtant ", cost, "pts")
+    
+    def buyStrength(self):
+        cost = round(np.exp(self.strength*0.35))
+        if(cost > self.money):
+            print("pas assez d'argent, manque ", cost-self.money, " pts")
+        else:
+            self.strength+= 5
+            self.money -= cost
+            print("a acheté une amélioration en force coûtant ", cost, "pts")
+
     #AJOUTE
-    #donne une valeur aléatoire d'attaque entre 10 ee 100 par pas de 10
+    #donne une valeur aléatoire d'attaque entre 10 ee 100 par pas de 10 selon une loi uniforme
     def setAttack(self):
-        results = np.arange(10, 100, 10)
+        lower_attack = self.strength-50
+        if(lower_attack< 0):
+            lower_attack = 0
+        results = np.arange(lower_attack, self.strength+55, 5)
         probabilities = np.ones(len(results)) / len(results)
         r = random.random()
         self.attack = getResult(r, results, probabilities)
@@ -293,9 +334,76 @@ def convertMsecToMinSec(millis):
     #hours=(millis/(1000*60*60))%24
     return str(minutes) + ":" + str(seconds)
 
+# Stats (espérance et écart-type) pour les différentes lois utilisées
+
+def statsPoisson(para1):
+    expected_val = para1
+    standard_der = np.sqrt(para1)
+    return expected_val, standard_der
+
+def statsContinuousUniform(a, b):
+    expected_val = (b+a)/2
+    standard_der = (b-a)/np.sqrt(12)
+    return expected_val, standard_der
+
+def statsUniform(n, a, b):
+    expected_val = (b+a)/2
+    standard_der = np.sqrt((pow(n, 2)-1)/12)
+    return expected_val, standard_der
+
+def statsBernouilli(p):
+    expected_val = p
+    standard_der = np.sqrt(p*(1-p))
+    return expected_val, standard_der
+
+def statsExp(para1):
+    expected_val = 1/para1
+    standard_der = 1/para1
+    return expected_val, standard_der
+
+#définition d'unécran explicatif
+def show_stats_screen():
+    ev1, sd1 = statsBernouilli(player.accuracy) # Arme fontionne ou pas  
+
+    lower_attack = player.strength-50
+    if(lower_attack< 0):
+        lower_attack = 0
+    array = np.arange(lower_attack, player.strength+55, 5)
+    ev2, sd2 = statsUniform(len(array), array[0], array[len(array)-1]) # Dégâts de l'arme
+
+    ev3, sd3 = statsExp(duration_game) # Durée de vie de l'arme en sec
+
+    ev4, sd4 = statsPoisson(1) # Fréquence d'apparition des aléas, 1 par sec
+    ev5, sd5 = statsContinuousUniform(duration_game/2, duration_game) # Temps d'apparition des boss
+
+    screen.blit(background, background_rect)
+    draw_text(screen, "Statistiques", 64, WIDTH / 2, -40 + HEIGHT / 13)
+    draw_text(screen, "Fonctionnement de l'arme", 22, WIDTH / 2, HEIGHT*2/13)
+    draw_text(screen, "Espérance : " + str(ev1) + " Ecart-type" + str(sd1), 18, WIDTH / 2, -10+HEIGHT*3/13)
+    draw_text(screen, "Dégâts de l'arme", 22, WIDTH / 2, HEIGHT*4/13)
+    draw_text(screen, "Espérance : " + str(ev2) + " Ecart-type" + str(sd2), 18, WIDTH / 2, -10+HEIGHT*5/13)
+    draw_text(screen, "Durée de vie de l'arme", 22, WIDTH / 2, HEIGHT*6/13)
+    draw_text(screen, "Espérance : " + str(ev3) + " Ecart-type" + str(sd3), 18, WIDTH / 2, -10+HEIGHT*7/13)
+    draw_text(screen, "Fréquence d'apparition des aléas (par sec)", 22, WIDTH / 2, HEIGHT*8/13)
+    draw_text(screen, "Espérance : " + str(ev4) + " Ecart-type" + str(sd4), 18, WIDTH / 2, -10+HEIGHT*9/13)
+    draw_text(screen, "Temps d'apparition des boss (en sec)", 22, WIDTH / 2, HEIGHT*10/13)
+    draw_text(screen, "Espérance : " + str(ev5) + " Ecart-type" + str(sd5), 18, WIDTH / 2, -10+HEIGHT*11/13)
+    draw_text(screen, "Appuyer sur Entrer du pavé numérique pour recommencer une partie", 18, WIDTH / 2, HEIGHT*12/13)
+
+    pygame.display.flip()
+    waiting = True
+    while waiting:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_KP_ENTER:
+                    waiting = False
+
 #création d'un sprite pour l'astéroïde          
 class Ennemi(pygame.sprite.Sprite):
-    def __init__(self, max_health, attack):
+    def __init__(self, max_health, attack, images):
         #self est une convention de python pour le premier paramètre d'une instance
         pygame.sprite.Sprite.__init__(self)
         
@@ -312,7 +420,7 @@ class Ennemi(pygame.sprite.Sprite):
         self.speedy = random.randrange(1,8)
         self.speedx = random.randrange(-3,3)
         #choisit une image dans la liste et l'attribut à la météorite créée
-        self.image_orig = random.choice(meteor_images)
+        self.image_orig = random.choice(images)
         self.image.set_colorkey(BLACK)
         self.image = self.image_orig.copy()
         self.rot = 0
@@ -353,13 +461,14 @@ class Ennemi(pygame.sprite.Sprite):
     #AJOUTE
     #dessine la barre de vie
     def draw_bar(self):
-        draw_shield_bar(screen, self.rect.x, self.rect.y, self.health, self.max_health)
+        draw_shield_bar(screen, self.rect.x, self.rect.y - 15 , self.health, self.max_health)
+        draw_text(screen, str(ennemi.health), 18, self.rect.x + 120, self.rect.y - 20)
 
 def createMinion():
-    return Ennemi(50, 20)
+    return Ennemi(50, 20, meteor_images)
 
 def createBoss():
-    return Ennemi(200, 50)
+    return Ennemi(400, 50, boss_images)
 
 #Création de sprites pour les tirs           
 class Bullet(pygame.sprite.Sprite):
@@ -407,7 +516,7 @@ class Explosion(pygame.sprite.Sprite):
                 self.rect.center = center
 
 #création de sprites pour les bonus                
-class Pow(pygame.sprite.Sprite):
+class Bonus(pygame.sprite.Sprite):
     def __init__(self, center):
         pygame.sprite.Sprite.__init__(self)
         self.type = random.choice(['shield', 'gun'])
@@ -422,6 +531,7 @@ class Pow(pygame.sprite.Sprite):
         # kill if it moves off the bottom of the screen
         if self.rect.top > HEIGHT:
             self.kill()
+ 
 
 #création de groupes pour lancer les éléments dans la fenêtre
 all_sprites = pygame.sprite.Group()
@@ -430,7 +540,7 @@ Ennemis= pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 player = Player()
 all_sprites.add(player)
-ennemi = createMinion()
+ennemi = createMinion() 
 #all_sprites.add(ennemi)
 # for i in range (8):
 #     newEnnemi()
@@ -453,19 +563,24 @@ def draw_text(surf, text, size, x, y):
 game_over = True
 running = True
 prev_time = pygame.time.get_ticks()
+show_stats = False
 
 while running:
     #si le joueur a perdu et souhaite rejouer, les éléments sont recréés
+    if show_stats:
+        show_stats_screen()
     if game_over:
         show_go_screen()
     
         #AJOUTE
-        # Durée de la partie et donc de l'arme
-        r_end = random.random()
-        probabilities_end, results_end = getContinuousUniform(60, 120) #en secondes
+        duration_game = 60 # durée de vie de l'arme en secondes (A REMPLACER)
+        # Temps après quoi le boss apparaît
+        r_boss = random.random()
+        probabilities_boss, results_boss = getContinuousUniform(round(duration_game/2), duration_game) #en secondes, 
         start = pygame.time.get_ticks()
-        duration_game = getResult(r_end, results_end, probabilities_end) * 1000
+        apparition_boss = getResult(r_boss, results_boss, probabilities_boss) * 1000
 
+        show_stats = False
         game_over = False
         all_sprites = pygame.sprite.Group()
         Ennemis = pygame.sprite.Group() #AJOUTE
@@ -486,19 +601,23 @@ while running:
             running = False
 
     #AJOUTE
+    #Apparition des ennemis à une fréquence moyenne de 1 ennemi par seconde
+    #Avant apparition_boss, les ennemis sont des minion, après ce sont des boss
     if(math.floor(prev_time/1000)-math.floor(pygame.time.get_ticks()/1000)!=0):
         r = random.random()
-        probabilities, results = getProbabilitiesPoisson(2)
-        for i in range (0, getResult(r, results, probabilities)):
-            newEnnemi()
+        probabilities_ennemi, results_ennemi = getProbabilitiesPoisson(1)
+        for i in range (0, getResult(r, results_ennemi, probabilities_ennemi)):
+            if(pygame.time.get_ticks() - start >= apparition_boss):
+                newBoss()
+            else: 
+                newEnnemi()
+
     prev_time = pygame.time.get_ticks()
 
     #Mise à jour
     all_sprites.update()
     
-    print(pygame.time.get_ticks() - start, "start = ", start, "end = ", duration_game)
-    if(pygame.time.get_ticks() - start >= duration_game):
-        game_over = True
+
         
     #collision des astéroides avec le laser   
     hits = pygame.sprite.groupcollide(Ennemis, bullets, False, True)
@@ -512,15 +631,16 @@ while running:
         #envoi de bonus de manière aléatoire
         #Fonction random.random () choisit un décimal entre 0 et 1 et envoi un bonus si le nombre est supérieur à 0.9
         if random.random() > 0.9:
-            pow = Pow(hit.rect.center)
-            all_sprites.add(pow)
-            powerups.add(pow)
+            powerup = Bonus(hit.rect.center)
+            all_sprites.add(powerup)
+            powerups.add(powerup)
         #appelle la fonction new ennemi pour lancer d'autres météorites
         # newEnnemi()
         #AJOUTE
-        #ennemi touché perd de la vie
+        #ennemi touché perd de la vie ou disparaît
         if(hit.health - player.attack <= 0):
             hit.health = 0
+            player.money += 10
             Ennemis.remove(hit)
             all_sprites.remove(hit)
         else:
@@ -530,7 +650,7 @@ while running:
     hits = pygame.sprite.spritecollide(player, Ennemis, True, pygame.sprite.collide_circle)
     #vérifie s'il y a une collision
     for hit in hits:
-        player.shield -= ennemi.attack
+        player.shield -= 500 #ennemi.attack
         expl = Explosion(hit.rect.center, 'sm')
         all_sprites.add(expl)
         # newEnnemi()
@@ -540,6 +660,7 @@ while running:
             all_sprites.add(death_explosion)
             player.hide()
             player_explosion_sound.play()
+            show_stats = True
             game_over = True
             
     # vérifie si le joueur heurte un bonus
@@ -571,7 +692,15 @@ while running:
 
     #AJOUTE
     # Affiche la durée de la partie
-    draw_text(screen, convertMsecToMinSec(duration_game - pygame.time.get_ticks() + start), 18, 130, 50)
+    time_boss = apparition_boss - pygame.time.get_ticks() + start
+    if(time_boss >= 0):
+        draw_text(screen, "Temps avant apparition des boss : " + convertMsecToMinSec(time_boss), 18, 140, 50)
+    # Affiche l'argent du joueur
+    draw_text(screen, "Argent : " + str(player.money), 18, 50, 100)
+    draw_text(screen, "Précision : " + str(player.accuracy) + " (1 pour améliorer", 18, 120, 120)
+    draw_text(screen, "Attaque moyenne : " + str(player.strength) + " (2 pour améliorer)", 18, 140, 140)
+
+    draw_text(screen, "Dernière attaque : " + str(player.attack), 18, 80, 160)
 
     # mise à jour de l'affichage
     pygame.display.flip()
