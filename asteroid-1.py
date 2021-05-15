@@ -3,6 +3,14 @@
 import pygame
 import random
 import os
+import math
+
+from pygame import draw
+import numpy as np
+import random
+from pygame import time 
+
+from pygame.draw import rect
 
 
 WIDTH = 480
@@ -85,22 +93,22 @@ pygame.mixer.music.set_volume(0.4)
 
 #définition d'une nouvelle météorite
 def newEnnemi():
-    m = Ennemi()
+    m = createMinion()
     all_sprites.add(m)
     Ennemis.add(m) 
 
 #définition d'une barre de progression de la qualité du bouclier
-def draw_shield_bar(surf, x, y, pct):
+def draw_shield_bar(surf, x, y, pct, max):
     if pct < 0:
         pct = 0
     BAR_LENGTH = 100
     BAR_HEIGHT = 10
-    fill = (pct / 100) * BAR_LENGTH
+    fill = pct * BAR_LENGTH / max
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
     pygame.draw.rect(surf, GREEN, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
-        
+
 #définition d'unécran explicatif
 def show_go_screen():
     screen.blit(background, background_rect)
@@ -149,6 +157,7 @@ class Player(pygame.sprite.Sprite):
 
         #définition de la précision
         self.accuracy = 0.6
+        self.attack = 10
 
     def update(self):
         #pause pour les bonus
@@ -177,6 +186,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.x +=self.speedx
         #Lance un rayon laser
         if event[pygame.K_SPACE]:
+            player.setAttack()
             self.shoot()
         
         #Garder l'objet dans l'écran
@@ -217,10 +227,75 @@ class Player(pygame.sprite.Sprite):
         self.hide_timer = pygame.time.get_ticks()
         self.rect.center = (WIDTH / 2, HEIGHT + 200)
 
-        
+    #AJOUTE
+    #donne une valeur aléatoire d'attaque entre 10 ee 100 par pas de 10
+    def setAttack(self):
+        results = np.arange(10, 100, 10)
+        probabilities = np.ones(len(results)) / len(results)
+        r = random.random()
+        self.attack = getResult(r, results, probabilities)
+        return self.attack
+
+#AJOUTE
+def getResult(random, array_results, array_probabilities):
+    sum = 0
+    i = -1
+    index = -1
+    while(sum<=1 or index==-1):
+        if(random <= sum):
+            index = i
+            break
+        i+=1
+        sum+=array_probabilities[i]
+
+    #print("index: ", index, " result: ", array_results[index] )
+    return array_results[index]
+
+#AJOUTE
+def fact(n):
+    F = 1
+    for k in range(1, n+1):
+        F *= k
+    return F
+
+#AJOUTE
+def getProbabilitiesPoisson(para1):
+    probabilities = []
+    results = []
+    i=0
+    sum=0
+    while("la probabilité est différente de 0"):
+        proba = np.exp(-para1)*pow(para1, i)/fact(i)
+        #print(proba)
+        if(sum==1):
+            break
+        probabilities.append(proba)
+        results.append(i)
+        sum += proba
+        i+=1
+    return probabilities, results
+
+def getContinuousUniform(a, b):
+    results = np.arange(a, b, 1)
+    probabilities = np.ones(len(results)) / (b-a)
+    return probabilities, results
+
+def newBoss():
+    m = createBoss()
+    all_sprites.add(m)
+    Ennemis.add(m) 
+
+def convertMsecToMinSec(millis):
+    seconds=round(millis/1000)%60
+    seconds = int(seconds)
+    minutes=(millis/(1000*60))%60
+    minutes = int(minutes)
+    #hours=(millis/(1000*60*60))%24
+    return str(minutes) + ":" + str(seconds)
+
 #création d'un sprite pour l'astéroïde          
 class Ennemi(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, max_health, attack):
         #self est une convention de python pour le premier paramètre d'une instance
         pygame.sprite.Sprite.__init__(self)
         
@@ -243,10 +318,14 @@ class Ennemi(pygame.sprite.Sprite):
         self.rot = 0
         self.rot_speed = random.randrange(-8, 8)
         self.last_update = pygame.time.get_ticks()
+        
+        #AJOUTE
+        #définition des points d'attaque et des points de vie
+        self.max_health = max_health
+        self.health = max_health
+        self.attack = attack
+        # self.attack = 20
 
-        #définition des points d'attaque
-        self.attack = 20
-    
 #permet de faire tourner la météorite    
     def rotate(self):
         now = pygame.time.get_ticks()
@@ -263,10 +342,24 @@ class Ennemi(pygame.sprite.Sprite):
         self.rotate()
         self.rect.x += self.speedx
         self.rect.y += self.speedy
+        #AJOUTE
+        # draw_shield_bar(screen, self.rect.x, self.rect.y, 10)
+        # self.health_bar.update(self.health, 20, 20)
         if self.rect.top > HEIGHT + 10 or self.rect.left < -100 or self.rect.right > WIDTH + 100:
             self.rect.x = random.randrange(WIDTH - self.rect.width)
             self.rect.y = random.randrange(-100, -40)
             self.speedy = random.randrange(1, 8)
+
+    #AJOUTE
+    #dessine la barre de vie
+    def draw_bar(self):
+        draw_shield_bar(screen, self.rect.x, self.rect.y, self.health, self.max_health)
+
+def createMinion():
+    return Ennemi(50, 20)
+
+def createBoss():
+    return Ennemi(200, 50)
 
 #Création de sprites pour les tirs           
 class Bullet(pygame.sprite.Sprite):
@@ -337,12 +430,10 @@ Ennemis= pygame.sprite.Group()
 bullets = pygame.sprite.Group()
 player = Player()
 all_sprites.add(player)
-ennemi = Ennemi()
+ennemi = createMinion()
 #all_sprites.add(ennemi)
-for i in range (8):
-    newEnnemi()
-
-
+# for i in range (8):
+#     newEnnemi()
 
 score=0
 #Met la musique de fond en boucle
@@ -361,19 +452,30 @@ def draw_text(surf, text, size, x, y):
 # Boucle du jeu
 game_over = True
 running = True
+prev_time = pygame.time.get_ticks()
+
 while running:
     #si le joueur a perdu et souhaite rejouer, les éléments sont recréés
     if game_over:
         show_go_screen()
+    
+        #AJOUTE
+        # Durée de la partie et donc de l'arme
+        r_end = random.random()
+        probabilities_end, results_end = getContinuousUniform(60, 120) #en secondes
+        start = pygame.time.get_ticks()
+        duration_game = getResult(r_end, results_end, probabilities_end) * 1000
+
         game_over = False
         all_sprites = pygame.sprite.Group()
+        Ennemis = pygame.sprite.Group() #AJOUTE
         mobs = pygame.sprite.Group()
         bullets = pygame.sprite.Group()
         powerups = pygame.sprite.Group()
         player = Player()
         all_sprites.add(player)
-        for i in range(8):
-            newEnnemi()
+        # for i in range(8):
+        #     newEnnemi()
         score = 0
     #continue de jouer la boucle à la bonne vitesse
     clock.tick(FPS)
@@ -382,15 +484,24 @@ while running:
         # vérifie si la fenêtre se ferme
         if event.type == pygame.QUIT:
             running = False
-    
 
+    #AJOUTE
+    if(math.floor(prev_time/1000)-math.floor(pygame.time.get_ticks()/1000)!=0):
+        r = random.random()
+        probabilities, results = getProbabilitiesPoisson(2)
+        for i in range (0, getResult(r, results, probabilities)):
+            newEnnemi()
+    prev_time = pygame.time.get_ticks()
 
     #Mise à jour
     all_sprites.update()
     
+    print(pygame.time.get_ticks() - start, "start = ", start, "end = ", duration_game)
+    if(pygame.time.get_ticks() - start >= duration_game):
+        game_over = True
         
     #collision des astéroides avec le laser   
-    hits = pygame.sprite.groupcollide(Ennemis, bullets, True, True)
+    hits = pygame.sprite.groupcollide(Ennemis, bullets, False, True)
     #vérifie si il y a une collision
     for hit in hits:
         score += 50 - hit.radius
@@ -405,8 +516,15 @@ while running:
             all_sprites.add(pow)
             powerups.add(pow)
         #appelle la fonction new ennemi pour lancer d'autres météorites
-        newEnnemi()
-        
+        # newEnnemi()
+        #AJOUTE
+        #ennemi touché perd de la vie
+        if(hit.health - player.attack <= 0):
+            hit.health = 0
+            Ennemis.remove(hit)
+            all_sprites.remove(hit)
+        else:
+            hit.health -= player.attack
         
     #collision des astéroides et du vaisseau
     hits = pygame.sprite.spritecollide(player, Ennemis, True, pygame.sprite.collide_circle)
@@ -415,7 +533,7 @@ while running:
         player.shield -= ennemi.attack
         expl = Explosion(hit.rect.center, 'sm')
         all_sprites.add(expl)
-        newEnnemi()
+        # newEnnemi()
         #si la valeur du bouclier atteint 0, le joueur perd une vie et explose
         if player.shield <= 0:
             death_explosion = Explosion(player.rect.center, 'player')
@@ -438,15 +556,23 @@ while running:
         if hit.type == 'gun':
             player.powerup()
             gun_sound.play()
-    
+
 # Dessin / rendu
     #définition du fond de la fenêtre
     screen.fill(BLACK)
     screen.blit(background, background_rect)
+
     all_sprites.draw(screen)
+    for ennemi in Ennemis.sprites():
+        ennemi.draw_bar()
     draw_text(screen, str(score), 18, WIDTH / 2, 10)
     draw_text(screen, str(player.shield), 18, 130, 0)
-    draw_shield_bar(screen, 5, 5, player.shield)
+    draw_shield_bar(screen, 5, 5, player.shield, 100)
+
+    #AJOUTE
+    # Affiche la durée de la partie
+    draw_text(screen, convertMsecToMinSec(duration_game - pygame.time.get_ticks() + start), 18, 130, 50)
+
     # mise à jour de l'affichage
     pygame.display.flip()
 
