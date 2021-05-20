@@ -699,7 +699,7 @@ while running:
         draw_text(screen, "Temps avant apparition des boss : " + convertMsecToMinSec(time_boss), 18, 140, 50)
     # Affiche l'argent du joueur
     draw_text(screen, "Argent : " + str(player.money), 18, 50, 100)
-    draw_text(screen, "Précision : " + str(player.accuracy) + " (1 pour améliorer", 18, 120, 120)
+    draw_text(screen, "Précision : " + str(player.accuracy) + " (1 pour améliorer)", 18, 120, 120)
     draw_text(screen, "Attaque moyenne : " + str(player.strength) + " (2 pour améliorer)", 18, 140, 140)
 
     draw_text(screen, "Dernière attaque : " + str(player.attack), 18, 80, 160)
