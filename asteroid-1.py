@@ -554,10 +554,10 @@ def show_stats_screen():
     array = np.arange(lower_attack, player.strength+55, 5)
     ev2, sd2 = statsUniform(len(array), array[0], array[len(array)-1]) # Dégâts de l'arme
 
-    ev3, sd3 = statsExp(duration_game) # Durée de vie de l'arme en sec
+    ev3, sd3 = statsExp(1/init_duration_game) # Durée de vie initiale de l'arme en sec
 
     ev4, sd4 = statsPoisson(1) # Fréquence d'apparition des aléas, 1 par sec
-    ev5, sd5 = statsContinuousUniform(duration_game/2, duration_game) # Temps d'apparition des boss
+    ev5, sd5 = statsContinuousUniform(init_duration_game/2, init_duration_game) # Temps d'apparition des boss
 
     pygame.draw.rect(screen, TURQUOISE, pygame.Rect(0, 0, WIDTH, HEIGHT+INFO_H))
 
@@ -567,7 +567,7 @@ def show_stats_screen():
     draw_text(screen, "Espérance : " + str(round(ev1, 4)) + "  Ecart-type : " + str(round(sd1)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*3/13)
     draw_text(screen, "Dégâts de l'arme", 22, WHITE, WIDTH / 2, d+HEIGHT*4/13)
     draw_text(screen, "Espérance : " + str(round(ev2, 4)) + "   Ecart-type : " + str(round(sd2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*5/13)
-    draw_text(screen, "Durée de vie de l'arme", 22, WHITE, WIDTH / 2, d+HEIGHT*6/13)
+    draw_text(screen, "Durée de vie intiale de l'arme (en sec)", 22, WHITE, WIDTH / 2, d+HEIGHT*6/13)
     draw_text(screen, "Espérance : " + str(round(ev3, 4)) + "   Ecart-type : " + str(round(sd3, 4)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*7/13)
     draw_text(screen, "Fréquence d'apparition des aléas (par sec)", 22, WHITE, WIDTH / 2, d+HEIGHT*8/13)
     draw_text(screen, "Espérance : " + str(round(ev4, 4)) + "   Ecart-type : " + str(round(sd4, 4)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*9/13)
@@ -645,7 +645,8 @@ while running:
         show_go_screen()
     
         #AJOUTE
-        duration_game = 60 # durée de vie de l'arme en secondes (A REMPLACER)
+        init_duration_game = 60
+        duration_game = init_duration_game # durée de vie de l'arme en secondes (A REMPLACER)
         # Temps après quoi le boss apparaît
         r_boss = random.random()
         probabilities_boss, results_boss = getContinuousUniform(round(duration_game/2), duration_game) #en secondes, 
