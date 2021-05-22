@@ -270,17 +270,14 @@ class Player(pygame.sprite.Sprite):
         if(prev_time < message.time+1500):
             return
         if(cost > self.money):
-            message.text = "Manque "+str(cost-self.money)+" pts"
-            print("Pas assez d'argent, manque ", cost-self.money, " pts")
+            message.text = "Manque "+str(cost-self.money) +" pts"
         elif(self.accuracy>=0.95):
             message.text = "Précision maximale. Amélioration impossible"
-            print("Précision maximale. Amélioration impossible")
         else:
             self.accuracy+= 0.05
             self.accuracy = round(self.accuracy, 2)
             self.money -= cost
             message.text = "+0.05 en précision"
-            print("a acheté une amélioration en précision coûtant ", cost, "pts")
         
         if(prev_time > message.time+1500):
             message.time = pygame.time.get_ticks()
@@ -292,12 +289,10 @@ class Player(pygame.sprite.Sprite):
         cost = round(np.exp(self.strength*0.1))
         if(cost > self.money):
             message.text = "Manque " + str(cost-self.money) + " pts"
-            print("Manque ", cost-self.money, " pts")
         else:
             self.strength+= 5
             self.money -= cost
             message.text = "+5 en force"
-            print("a acheté une amélioration en force coûtant ", cost, "pts")
 
         message.time = pygame.time.get_ticks()
         all_sprites.add(message)
@@ -636,7 +631,6 @@ def draw_text(surf, text, size, color, x, y):
     text_rect.midtop = (x, y)
     surf.blit(text_surface, text_rect)
 
-   
 # Boucle du jeu
 game_over = True
 running = True
@@ -679,7 +673,28 @@ while running:
         # vérifie si la fenêtre se ferme
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYUP:
+            #Achète une amélioration de précision
+            if event.key == pygame.K_KP3:
+                    cost = 100
+                    if(prev_time >= message.time+1500):
 
+                        if(cost > player.money):
+                            message.text = "Manque "+str(cost-player.money)+" pts"
+                        else:
+                            duration_game += 10 #en sec
+                            player.money -= cost
+                            message.text = "+10s"
+                            
+                        if(prev_time > message.time+1500):
+                            message.time = pygame.time.get_ticks()
+                            all_sprites.add(message)
+    
+
+    if(pygame.time.get_ticks() - start >= duration_game*1000):
+        show_stats = True
+        game_over = True
+    
     #AJOUTE
     #Apparition des ennemis à une fréquence moyenne de 1 ennemi par seconde
     #Avant apparition_boss, les ennemis sont des minion, après ce sont des boss
@@ -769,13 +784,6 @@ while running:
     #définition du fond de la fenêtre
     screen.fill(BLACK)
     screen.blit(background, background_rect)
-    # info = pygame.Surface((WIDTH, INFO_H))
-    # info.fill(GREEN)
-    # info_rect = info.get_rect()
-    # info_rect.x = WIDTH/2
-    # info_rect.y = HEIGHT/2
-    # info.draw(screen)
-
 
     all_sprites.draw(screen)
     for ennemi in Ennemis.sprites():
@@ -792,10 +800,12 @@ while running:
     # draw_shield_bar(screen, 5, 5, player.shield, 100)
 
     #AJOUTE
-    # Affiche la durée de la partie
+    draw_text(screen, "Temps restant : " + convertMsecToMinSec(duration_game*1000-pygame.time.get_ticks() + start), 18, BLACK, WIDTH/2, 30)
+    draw_text(screen, "(3 pour améliorer)", 14, BLACK, WIDTH/2, 50)
+    # Affiche la durée de l'apparition des superaléas
     time_boss = apparition_boss - pygame.time.get_ticks() + start
     if(time_boss >= 0):
-        draw_text(screen, "Temps avant apparition des superaléas : " + convertMsecToMinSec(time_boss), 18, BLACK, WIDTH/2, 35)
+        draw_text(screen, "Temps avant apparition des superaléas : " + convertMsecToMinSec(time_boss), 18, BLACK, WIDTH/2, 70)
     # Affiche l'argent du joueur
     lower_attack = player.strength-20
     if(lower_attack<=0):
