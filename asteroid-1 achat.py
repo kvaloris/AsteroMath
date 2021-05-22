@@ -179,7 +179,7 @@ class Player(pygame.sprite.Sprite):
 
         #définition de la précision, attaque, argent
         self.accuracy = 0.6
-        self.strength = 30
+        self.strength = 20
         self.attack = 30
         self.money = 0
 
@@ -213,15 +213,15 @@ class Player(pygame.sprite.Sprite):
             player.setAttack()
             self.shoot()
         #AJOUTE
-        # clock.tick(FPS)
-        # for event2 in pygame.event.get():
-        #     if event2.type == pygame.KEYUP:
-        #         #Achète une amélioration de précision
-        #         if event2.key == pygame.K_KP1:
-        #             self.buyAccuracy()
-        #         #Achète une amélioration d'attaque
-        #         if event2.key == pygame.K_KP2:
-        #             self.buyStrength()
+        clock.tick(FPS)
+        for event2 in pygame.event.get():
+            if event2.type == pygame.KEYUP:
+                #Achète une amélioration de précision
+                if event2.key == pygame.K_KP1:
+                    self.buyAccuracy()
+                #Achète une amélioration d'attaque
+                if event2.key == pygame.K_KP2:
+                    self.buyStrength()
 
     
         #Garder l'objet dans l'écran
@@ -571,9 +571,11 @@ def show_stats_screen():
     d = 40
     draw_text(screen, "Statistiques", 64, WHITE, WIDTH / 2, d-60 + HEIGHT / 13)
     draw_text(screen, "Fonctionnement de l'arme", 22, WHITE, WIDTH / 2, d+HEIGHT*2/13)
-    draw_text(screen, "Espérance : " + str(round(ev1, 2)) + "  Ecart-type : " + str(round(sd1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*3/13)
+    # draw_text(screen, "Espérance : " + str(round(ev1, 2)) + "  Ecart-type : " + str(round(sd1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*3/13)
+    draw_text(screen, "Valeurs théo. : N/A (les paramètres changent)   Moyenne réelle : [A REMPLIR]", 18, WHITE, WIDTH / 2, d-10+HEIGHT*3/13)
     draw_text(screen, "Dégâts de l'arme", 22, WHITE, WIDTH / 2, d+HEIGHT*4/13)
-    draw_text(screen, "Espérance : " + str(round(ev2, 2)) + "   Ecart-type : " + str(round(sd2, 2)) + "   Moyenne réelle : " + str(round(m1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*5/13)
+    # draw_text(screen, "Espérance : " + str(round(ev2, 2)) + "   Ecart-type : " + str(round(sd2, 2)) + "   Moyenne réelle : " + str(round(m1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*5/13)
+    draw_text(screen, "Valeurs théo. : N/A (les paramètres changent)   Moyenne réelle : " + str(round(m1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*5/13)
     draw_text(screen, "Durée de vie intiale de l'arme (en sec)", 22, WHITE, WIDTH / 2, d+HEIGHT*6/13)
     draw_text(screen, "Espérance : " + str(round(ev3, 2)) + "   Ecart-type : " + str(round(sd3, 2)) + "   Valeur réelle : " + str(init_duration_game), 18, WHITE, WIDTH / 2, d-10+HEIGHT*7/13)
     draw_text(screen, "Fréquence d'apparition des aléas (par sec)", 22, WHITE, WIDTH / 2, d+HEIGHT*8/13)
@@ -826,9 +828,9 @@ while running:
     draw_text(screen, "Points de vie : " + str(player.shield), 18, WHITE, 70, h1)
     draw_shield_bar(screen, 12, h1 + 25, player.shield, 100)
     draw_text(screen, "Précision : " + str(player.accuracy), 18, WHITE, 205, h1)
-    # draw_text(screen, "(1 pour améliorer)", 14, WHITE, 205, h1 + 20)
-    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+20) + "]", 18, WHITE, 320, h1)
-    # draw_text(screen, " (2 pour améliorer)", 14, WHITE, 320, h1 + 20)
+    draw_text(screen, "(1 pour améliorer)", 14, WHITE, 205, h1 + 20)
+    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+30) + "]", 18, WHITE, 320, h1)
+    draw_text(screen, " (2 pour améliorer)", 14, WHITE, 320, h1 + 20)
     
     # draw_text(screen, "Dernière attaque : " + str(player.attack), 18, 80, 160)
     
