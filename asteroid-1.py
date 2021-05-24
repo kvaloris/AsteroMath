@@ -13,6 +13,7 @@ from pygame import time
 
 from pygame.draw import rect
 
+pygame.init()
 
 WIDTH = 480
 HEIGHT = 600
@@ -105,6 +106,15 @@ for snd in ['expl3.wav', 'expl6.wav']:
     expl_sounds.append(pygame.mixer.Sound(os.path.join(snd_dir, snd)))
 pygame.mixer.music.load(os.path.join(snd_dir, 'tgfcoder-FrozenJam-SeamlessLoop.mp3'))
 pygame.mixer.music.set_volume(0.4)
+
+#liste des aleas
+listeAlea = [
+    ["Votre appartement a pris feu", -100, "money"],
+    ["Votre petit(e)-ami(e) a décidé de rompre avec vous, vous pleurez", -10, "accuracy"],
+    ["Votre mère décide de vous rendre visite", +100, "money"],
+    ["La banque décide de vous prendre votre maison et votre voiture", -5000, "money"],
+    ["Vous avez pris un coup de vieux", -30, "accuracy"]
+]
 
 #définition d'une nouvelle météorite
 def newEnnemi():
@@ -235,29 +245,32 @@ class Player(pygame.sprite.Sprite):
         self.power += 1
         self.power_time = pygame.time.get_ticks()
 
+    #ajout Bernoulli
     #définition de la fonction permettant de tirer    
     def shoot(self):
         now = pygame.time.get_ticks()
-        if now - self.last_shot > self.shoot_delay:
-            self.last_shot = now
-            #production d'une météorite si le bonus = 1
-            if self.power == 1:
-                bullet = Bullet(self.rect.centerx-2, self.rect.top) # self.rect.centerx
-                bullet.attack = player.attack
-                all_sprites.add(bullet)
-                bullets.add(bullet)
-                shoot_sound.play()
-            #production de deux météorites si le bonus est > 1
-            if self.power >= 2:
-                bullet1 = Bullet(self.rect.left, self.rect.centery)
-                bullet2 = Bullet(self.rect.right, self.rect.centery)
-                bullet1.attack = player.attack
-                bullet2.attack = player.attack
-                all_sprites.add(bullet1)
-                all_sprites.add(bullet2)
-                bullets.add(bullet1)
-                bullets.add(bullet2)
-                shoot_sound.play()
+        r = random.random()
+        if r > self.accuracy :
+            if now - self.last_shot > self.shoot_delay:
+                self.last_shot = now
+                #production d'une météorite si le bonus = 1
+                if self.power == 1:
+                    bullet = Bullet(self.rect.centerx-2, self.rect.top) # self.rect.centerx
+                    bullet.attack = player.attack
+                    all_sprites.add(bullet)
+                    bullets.add(bullet)
+                    shoot_sound.play()
+                #production de deux météorites si le bonus est > 1
+                if self.power >= 2:
+                    bullet1 = Bullet(self.rect.left, self.rect.centery)
+                    bullet2 = Bullet(self.rect.right, self.rect.centery)
+                    bullet1.attack = player.attack
+                    bullet2.attack = player.attack
+                    all_sprites.add(bullet1)
+                    all_sprites.add(bullet2)
+                    bullets.add(bullet1)
+                    bullets.add(bullet2)
+                    shoot_sound.play()
         
     def hide(self):
         # cache le joueur temporairement
@@ -363,7 +376,7 @@ class Ennemi(pygame.sprite.Sprite):
         self.attack = attack
         # self.attack = 20
 
-#permet de faire tourner la météorite    
+    #permet de faire tourner la météorite    
     def rotate(self):
         now = pygame.time.get_ticks()
         if now - self.last_update > 50:
@@ -521,6 +534,15 @@ def convertMsecToMinSec(millis):
     #hours=(millis/(1000*60*60))%24
     return str(minutes) + ":" + str(seconds)
 
+#AJOUTE KEZIAH
+def getUniformPond(liste):
+    r = random.random()
+    listeProb = [0.2] * len(liste)
+    return getResult(r, liste, listeProb)
+
+#def getExponentialLaw() :
+
+
 # Stats (espérance et écart-type) pour les différentes lois utilisées
 
 def statsPoisson(para1):
@@ -592,6 +614,15 @@ def show_stats_screen():
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_KP_ENTER:
                     waiting = False
+
+def afficheAlea(player, message) :
+    liste = getUniformPond(listeAlea)
+    message.text = liste[0]
+    if liste[2] == "accuracy" :
+        player.accuracy += liste[1]
+
+    else :
+        player.money += liste[1] 
 
 
 class Text(pygame.sprite.Sprite):
@@ -759,13 +790,16 @@ while running:
         bullets_damages.add(text)
         all_sprites.add(text)
         
-    #collision des astéroides et du vaisseau
+    #collision des astéroides et du player
     hits = pygame.sprite.spritecollide(player, Ennemis, True, pygame.sprite.collide_circle)
     #vérifie s'il y a une collision
     for hit in hits:
         player.shield -= ennemi.attack
         expl = Explosion(hit.rect.center, 'sm')
+        afficheAlea(player, message)
         all_sprites.add(expl)
+        #message.time = pygame.time.get_ticks()
+        all_sprites.add(message)
         # newEnnemi()
         #si la valeur du bouclier atteint 0, le joueur perd une vie et explose
         if player.shield <= 0:
