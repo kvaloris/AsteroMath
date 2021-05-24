@@ -110,9 +110,9 @@ pygame.mixer.music.set_volume(0.4)
 #liste des aleas
 listeAlea = [
     ["Votre appartement a pris feu", -100, "money"],
-    ["Votre petit(e)-ami(e) a décidé de rompre avec vous, vous pleurez", -10, "accuracy"],
+    ["Votre petit(e)-ami(e) romp avec vous", -10, "accuracy"],
     ["Votre mère décide de vous rendre visite", +100, "money"],
-    ["La banque décide de vous prendre votre maison et votre voiture", -5000, "money"],
+    ["La banque décide de saisir vos biens", -5000, "money"],
     ["Vous avez pris un coup de vieux", -30, "accuracy"]
 ]
 
@@ -329,7 +329,7 @@ class Message(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         
         #définition de la taille du rectangle
-        self.image = pygame.Surface((WIDTH-200, 50))
+        self.image = pygame.Surface((WIDTH-100, 50))
         
         #couleur de l'élément
         self.image.fill(WHITE)
@@ -540,7 +540,21 @@ def getUniformPond(liste):
     listeProb = [0.2] * len(liste)
     return getResult(r, liste, listeProb)
 
-#def getExponentialLaw() :
+def getExponentialLaw(para1) :
+    probabilities = []
+    results = []
+    i=1
+    sum=0
+    while("la probabilité est différente de 0"):
+        results.append(i)
+        proba = - np.exp(-para1 * (i)) + np.exp(-para1 * (i-1))
+        probabilities.append(proba)
+        sum += proba
+        i+=1
+        print(i, "p = ", proba)
+        if(proba < pow(10, -10) ):
+            break
+    return getResult(random.random(), results, probabilities)
 
 
 # Stats (espérance et écart-type) pour les différentes lois utilisées
@@ -580,7 +594,7 @@ def show_stats_screen():
     array = np.arange(lower_attack, player.strength+25, 5)
     ev2, sd2 = statsUniform(len(array), array[0], array[len(array)-1]) # Dégâts de l'arme
 
-    ev3, sd3 = statsExp(1/init_duration_game) # Durée de vie initiale de l'arme en sec
+    ev3, sd3 = statsExp(1/60) # Durée de vie initiale de l'arme en sec
 
     ev4, sd4 = statsPoisson(1) # Fréquence moyenne d'apparition des aléas, 1 par sec
     ev5, sd5 = statsContinuousUniform(init_duration_game/2, init_duration_game) # Temps d'apparition des boss
@@ -684,7 +698,7 @@ while running:
     
         #AJOUTE
         tab_degat_arme.append(player.attack)
-        init_duration_game = 60 # durée de vie initiale de l'arme en sec (A REMPLACER)
+        init_duration_game = getExponentialLaw(1/6000)/1000 # durée de vie initiale de l'arme en sec (A REMPLACER)
         duration_game = init_duration_game # durée de vie de l'arme en secondes pourra être augmentée par des âchats
         # Temps après quoi le boss apparaît
         r_boss = random.random()
@@ -798,7 +812,7 @@ while running:
         expl = Explosion(hit.rect.center, 'sm')
         afficheAlea(player, message)
         all_sprites.add(expl)
-        #message.time = pygame.time.get_ticks()
+        message.time = pygame.time.get_ticks()
         all_sprites.add(message)
         # newEnnemi()
         #si la valeur du bouclier atteint 0, le joueur perd une vie et explose
