@@ -105,7 +105,7 @@ expl_sounds = []
 for snd in ['expl3.wav', 'expl6.wav']:
     expl_sounds.append(pygame.mixer.Sound(os.path.join(snd_dir, snd)))
 pygame.mixer.music.load(os.path.join(snd_dir, 'tgfcoder-FrozenJam-SeamlessLoop.mp3'))
-pygame.mixer.music.set_volume(0.4)
+pygame.mixer.music.set_volume(0.01)
 
 #liste des aleas
 listeAlea = [
@@ -487,6 +487,7 @@ def getResult(random, array_results, array_probabilities):
             index = i
             break
         i+=1
+        #print(i)
         sum+=array_probabilities[i]
 
     #print("index: ", index, " result: ", array_results[index] )
@@ -550,9 +551,9 @@ def getExponentialLaw(para1) :
         proba = - np.exp(-para1 * (i)) + np.exp(-para1 * (i-1))
         probabilities.append(proba)
         sum += proba
+        print(i, "p = ", proba, "sum =", sum)
         i+=1
-        print(i, "p = ", proba)
-        if(proba < pow(10, -10) ):
+        if(sum>=1 or proba <= pow(10, -8)):
             break
     return getResult(random.random(), results, probabilities)
 
@@ -698,7 +699,7 @@ while running:
     
         #AJOUTE
         tab_degat_arme.append(player.attack)
-        init_duration_game = getExponentialLaw(1/6000)/1000 # durée de vie initiale de l'arme en sec (A REMPLACER)
+        init_duration_game = getExponentialLaw(1/60) # durée de vie initiale de l'arme en sec (A REMPLACER)
         duration_game = init_duration_game # durée de vie de l'arme en secondes pourra être augmentée par des âchats
         # Temps après quoi le boss apparaît
         r_boss = random.random()
