@@ -888,7 +888,7 @@ while running:
     if(time_boss >= 0):
         draw_text(screen, "Temps avant apparition des superaléas : " + convertMsecToMinSec(time_boss), 18, BLACK, WIDTH/2, 70)
     # Affiche l'argent du joueur
-    lower_attack = player.strength-20
+    lower_attack = player.strength-player.interval
     if(lower_attack<=0):
         lower_attack = 0
     h1 = HEIGHT + 20
@@ -896,7 +896,7 @@ while running:
     draw_text(screen, "Points de vie : " + str(player.shield), 18, WHITE, 70, h1)
     draw_shield_bar(screen, 12, h1 + 25, player.shield, 100)
     draw_text(screen, "Précision : " + str(player.accuracy), 18, WHITE, 205, h1)
-    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+20) + "]", 18, WHITE, 320, h1)
+    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+player.interval) + "]", 18, WHITE, 320, h1)
     
     if(prev_time > message.time+1000):
         all_sprites.remove(message)
