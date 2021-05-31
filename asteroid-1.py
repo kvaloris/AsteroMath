@@ -100,7 +100,7 @@ expl_sounds = []
 for snd in ['expl3.wav', 'expl6.wav']:
     expl_sounds.append(pygame.mixer.Sound(os.path.join(snd_dir, snd)))
 pygame.mixer.music.load(os.path.join(snd_dir, 'tgfcoder-FrozenJam-SeamlessLoop.mp3'))
-pygame.mixer.music.set_volume(0.4)
+pygame.mixer.music.set_volume(0.01)
 
 tab_degat_arme = []
 tab_freq_app = []
@@ -531,6 +531,7 @@ def getResult(random, array_results, array_probabilities):
             index = i
             break
         i+=1
+        #print(i)
         sum+=array_probabilities[i]
 
     return array_results[index]
@@ -592,9 +593,9 @@ def getExponentialLaw(para1) :
         proba = - np.exp(-para1 * (i)) + np.exp(-para1 * (i-1))
         probabilities.append(proba)
         sum += proba
+        print(i, "p = ", proba, "sum =", sum)
         i+=1
-        print(i, "p = ", proba)
-        if(sum >= 1 or proba <= pow(10, -8) ):
+        if(sum>=1 or proba <= pow(10, -8)):
             break
     return getResult(random.random(), results, probabilities)
 
