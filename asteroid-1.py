@@ -15,11 +15,15 @@ from pygame.draw import rect
 
 pygame.init()
 
+#-----------------------------------------------------------------------------------------
+# CONSTANTES ET VARIABLES
+#-----------------------------------------------------------------------------------------
+
 WIDTH = 480
 HEIGHT = 600
 FPS = 60
 
- # dimensions barre d'infos
+# dimensions barre d'infos
 INFO_H = 80
 INFO_M = 20
 
@@ -42,29 +46,20 @@ pygame.display.set_caption("asteroid")
 clock = pygame.time.Clock()
 POWERUP_TIME = 5000
 
-
 # mise en place des ressources
 game_folder = os.path.dirname(__file__)
 img_folder = os.path.join(game_folder, 'Images')
 # chargement des graphiques pour le jeu
-# background = pygame.image.load(os.path.join(img_folder, "galaxy3.png")).convert()
 background = pygame.image.load(os.path.join(img_folder, "fond.png")).convert()
 background_rect = background.get_rect()
 
 bullet_img = pygame.image.load(os.path.join(img_folder, 'laser.png')).convert()
-# player_img = pygame.image.load(os.path.join(img_folder, "vaisseau11.png")).convert()
 player_img = pygame.image.load(os.path.join(img_folder, "main.png")).convert_alpha()
 player_mini_img = pygame.transform.scale(player_img, (25, 19))
 player_mini_img.set_colorkey(BLACK)
 #création d'une liste comportant diverses images de météorites
 meteor_images = []
 boss_images = []
-# meteor_list = ['meteor.png', 'meteor7.png', 'meteor6.png', 'meteor8.png', 'meteor9.png', 'meteor10.png', 'meteor11.png']
-# boss_list = ['meteor2.png', 'meteor3.png', 'meteor4.png', 'meteor5.png']
-# for img in meteor_list:
-#     meteor_images.append(pygame.image.load(os.path.join(img_folder, img)).convert_alpha())
-# for img in boss_list:
-#     boss_images.append(pygame.image.load(os.path.join(img_folder, img)).convert_alpha()) 
 meteor_images.append(pygame.image.load(os.path.join(img_folder, 'aléa.png')).convert_alpha())
 boss_images.append(pygame.image.load(os.path.join(img_folder, 'superaléa.png')).convert_alpha())
 
@@ -107,57 +102,30 @@ for snd in ['expl3.wav', 'expl6.wav']:
 pygame.mixer.music.load(os.path.join(snd_dir, 'tgfcoder-FrozenJam-SeamlessLoop.mp3'))
 pygame.mixer.music.set_volume(0.4)
 
+tab_degat_arme = []
+tab_freq_app = []
+
 #liste des aleas
 listeAlea = [
-    ["Votre appartement a pris feu", -100, "money"],
-    ["Votre petit(e)-ami(e) romp avec vous", -10, "accuracy"],
+    ["Votre appartement a pris feu", -50, "money"],
+    ["Votre petit(e)-ami(e) romp avec vous", -5, "time"],
     ["Votre mère décide de vous rendre visite", +100, "money"],
-    ["La banque décide de saisir vos biens", -5000, "money"],
-    ["Vous avez pris un coup de vieux", -30, "accuracy"]
+    ["La banque décide de saisir vos biens", -300, "money"],
+    ["Vous avez pris un coup de vieux", -3, "time"]
 ]
 
-#définition d'une nouvelle météorite
-def newEnnemi():
-    m = createMinion()
-    all_sprites.add(m)
-    Ennemis.add(m) 
+listeDiff = [
+    ["Burn-out à cause de l'IMAC", -2, "time"],
+    ["On vous a viré comme un malpropre", -100, "money"],
+    ["Vous n'auriez pas dû manger ça...", -1, "time"]
+]
 
-#définition d'une barre de progression de la qualité du bouclier
-def draw_shield_bar(surf, x, y, pct, max):
-    if pct < 0:
-        pct = 0
-    BAR_LENGTH = 100
-    BAR_HEIGHT = 10
-    fill = pct * BAR_LENGTH / max
-    outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
-    fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
-    pygame.draw.rect(surf, GREEN, fill_rect)
-    pygame.draw.rect(surf, WHITE, outline_rect, 2)
+difficulty = 0
 
-def draw_message(text):
-    pygame.draw.rect(screen, TURQUOISE, pygame.Rect(50, 50-HEIGHT/2, WIDTH-100, 100))
-    draw_text(screen, text, 18, WHITE, WIDTH/2, HEIGHT/2)
+#-----------------------------------------------------------------------------------------
+# CLASSES
+#-----------------------------------------------------------------------------------------
 
-#définition d'unécran explicatif
-def show_go_screen():
-    screen.blit(background, background_rect)
-    h = 20+HEIGHT / 4
-    pygame.draw.rect(screen, TURQUOISE, pygame.Rect(0, 100, WIDTH, HEIGHT+INFO_H-200))
-    draw_text(screen, "C'EST BALAUD", 64, WHITE, WIDTH / 2, h)
-    draw_text(screen, "Lassé des aléas de la vie, vous décidez de prendre", 22, WHITE, WIDTH / 2, h+120)
-    draw_text(screen, "en main votre destin ! Terrassez-les tous !", 22, WHITE, WIDTH / 2, 150+h)
-    draw_text(screen, "Flèches pour se déplacer, Espace pour tirer", 22, WHITE, WIDTH / 2, 250+h)
-    draw_text(screen, "Appuyez sur une touche pour commencer", 18, WHITE, WIDTH / 2, 300+h)
-    pygame.display.flip()
-    waiting = True
-    while waiting:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.KEYUP:
-                waiting = False
-        
 #création d'un sprite avec le vaisseau
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -188,10 +156,16 @@ class Player(pygame.sprite.Sprite):
         self.power_time = pygame.time.get_ticks()
 
         #définition de la précision, attaque, argent
-        self.accuracy = 0.6
-        self.strength = 30
+        
+        if(difficulty == 2) :
+            self.accuracy = 0.3
+            self.interval = 30
+        else :
+            self.accuracy = 0.6
+            self.interval = 20
         self.attack = 30
         self.money = 0
+        self.strength = 30
 
     def update(self):
         #pause pour les bonus
@@ -222,17 +196,6 @@ class Player(pygame.sprite.Sprite):
         if event[pygame.K_SPACE]:
             player.setAttack()
             self.shoot()
-        #AJOUTE
-        # clock.tick(FPS)
-        # for event2 in pygame.event.get():
-        #     if event2.type == pygame.KEYUP:
-        #         #Achète une amélioration de précision
-        #         if event2.key == pygame.K_KP1:
-        #             self.buyAccuracy()
-        #         #Achète une amélioration d'attaque
-        #         if event2.key == pygame.K_KP2:
-        #             self.buyStrength()
-
     
         #Garder l'objet dans l'écran
         if self.rect.left < 0 :
@@ -313,10 +276,10 @@ class Player(pygame.sprite.Sprite):
     #AJOUTE
     #donne une valeur aléatoire d'attaque entre 10 ee 100 par pas de 10 selon une loi uniforme
     def setAttack(self):
-        lower_attack = self.strength-20
+        lower_attack = self.strength-self.interval
         if(lower_attack< 0):
             lower_attack = 0
-        results = np.arange(lower_attack, self.strength+25, 5)
+        results = np.arange(lower_attack, self.strength+(self.interval + 5), 5)
         probabilities = np.ones(len(results)) / len(results)
         r = random.random()
         self.attack = getResult(r, results, probabilities)
@@ -341,7 +304,6 @@ class Message(pygame.sprite.Sprite):
 
         self.text = "Nothing"
         self.time = -10000
-
 
 #création d'un sprite pour l'astéroïde          
 class Ennemi(pygame.sprite.Sprite):
@@ -466,10 +428,77 @@ class Bonus(pygame.sprite.Sprite):
         if self.rect.top > HEIGHT:
             self.kill()
 
-# FONCTIONS AJOUTES PAR NATACHA 
+class Text(pygame.sprite.Sprite):
+    def __init__(self, text, size, color, width, height):
+        # Call the parent class (Sprite) constructor  
+        pygame.sprite.Sprite.__init__(self)
+    
+        self.font = pygame.font.SysFont("Arial", size)
+        self.textSurf = self.font.render(text, 1, color)
+        # to get a transparent rect
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA) 
+        self.image.fill((255,255,255,0)) # notice the alpha value in the color
+        screen.blit(self.image, (0,0))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+        W = self.textSurf.get_width()
+        H = self.textSurf.get_height()
+        self.image.blit(self.textSurf, [width/2 - W/2, height/2 - H/2])
+        self.time = -1
 
-tab_degat_arme = []
-tab_freq_app = []
+#-----------------------------------------------------------------------------------------
+# METHODES
+#-----------------------------------------------------------------------------------------
+
+#définition d'une nouvelle météorite
+def newEnnemi():
+    m = createMinion()
+    all_sprites.add(m)
+    Ennemis.add(m) 
+
+#définition d'une barre de progression de la qualité du bouclier
+def draw_shield_bar(surf, x, y, pct, max):
+    if pct < 0:
+        pct = 0
+    BAR_LENGTH = 100
+    BAR_HEIGHT = 10
+    fill = pct * BAR_LENGTH / max
+    outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
+    fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
+    pygame.draw.rect(surf, GREEN, fill_rect)
+    pygame.draw.rect(surf, WHITE, outline_rect, 2)
+
+def draw_message(text):
+    pygame.draw.rect(screen, TURQUOISE, pygame.Rect(50, 50-HEIGHT/2, WIDTH-100, 100))
+    draw_text(screen, text, 18, WHITE, WIDTH/2, HEIGHT/2)
+
+#définition d'un écran explicatif
+def show_go_screen():
+    global difficulty
+    global listeAlea
+    screen.blit(background, background_rect)
+    h = 20+HEIGHT / 4
+    pygame.draw.rect(screen, TURQUOISE, pygame.Rect(0, 100, WIDTH, HEIGHT+INFO_H-200))
+    draw_text(screen, "C'EST BALAUD", 64, WHITE, WIDTH / 2, h)
+    draw_text(screen, "Lassé des aléas de la vie, vous décidez de prendre", 22, WHITE, WIDTH / 2, h+120)
+    draw_text(screen, "en main votre destin ! Terrassez-les tous !", 22, WHITE, WIDTH / 2, 150+h)
+    draw_text(screen, "Flèches pour se déplacer, Espace pour tirer", 22, WHITE, WIDTH / 2, 250+h)
+    draw_text(screen, "Appuyez sur 2 pour choisir le mode HELL", 18, WHITE, WIDTH / 2, 300+h)
+    draw_text(screen, "Appuyez sur une touche pour commencer", 18, WHITE, WIDTH / 2, 350+h)
+    pygame.display.flip()
+    waiting = True
+    while waiting:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_KP2:
+                    difficulty = 2
+                    listeAlea += listeDiff
+                else :
+                    waiting = False
 
 def createMinion():
     return Ennemi(50, 20, meteor_images)
@@ -477,7 +506,22 @@ def createMinion():
 def createBoss():
     return Ennemi(400, 50, boss_images)
 
-#AJOUTE
+
+def afficheAlea(player, message) :
+    global duration_game
+    liste = getUniformPond(listeAlea)
+    message.text = liste[0]
+    if liste[2] == "time" :
+        duration_game += liste[1]
+
+    else :
+        player.money += liste[1] 
+
+
+#-----------------------------------------------------------------------------------------
+# METHODES MATHEMATIQUES
+#-----------------------------------------------------------------------------------------
+
 def getResult(random, array_results, array_probabilities):
     sum = 0
     i = -1
@@ -489,7 +533,6 @@ def getResult(random, array_results, array_probabilities):
         i+=1
         sum+=array_probabilities[i]
 
-    #print("index: ", index, " result: ", array_results[index] )
     return array_results[index]
 
 #AJOUTE
@@ -507,7 +550,6 @@ def getProbabilitiesPoisson(para1):
     sum=0
     while("la probabilité est différente de 0"):
         proba = np.exp(-para1)*pow(para1, i)/fact(i)
-        #print(proba)
         if(sum==1):
             break
         probabilities.append(proba)
@@ -537,7 +579,7 @@ def convertMsecToMinSec(millis):
 #AJOUTE KEZIAH
 def getUniformPond(liste):
     r = random.random()
-    listeProb = [0.2] * len(liste)
+    listeProb = [1/len(liste)] * len(liste)
     return getResult(r, liste, listeProb)
 
 def getExponentialLaw(para1) :
@@ -552,12 +594,14 @@ def getExponentialLaw(para1) :
         sum += proba
         i+=1
         print(i, "p = ", proba)
-        if(proba < pow(10, -10) ):
+        if(sum >= 1 or proba <= pow(10, -8) ):
             break
     return getResult(random.random(), results, probabilities)
 
 
-# Stats (espérance et écart-type) pour les différentes lois utilisées
+#-----------------------------------------------------------------------------------------
+# STATISTIQUES (ESPERANCE ET ECART-TYPE)
+#-----------------------------------------------------------------------------------------
 
 def statsPoisson(para1):
     expected_val = para1
@@ -629,34 +673,6 @@ def show_stats_screen():
                 if event.key == pygame.K_KP_ENTER:
                     waiting = False
 
-def afficheAlea(player, message) :
-    liste = getUniformPond(listeAlea)
-    message.text = liste[0]
-    if liste[2] == "accuracy" :
-        player.accuracy += liste[1]
-
-    else :
-        player.money += liste[1] 
-
-
-class Text(pygame.sprite.Sprite):
-    def __init__(self, text, size, color, width, height):
-        # Call the parent class (Sprite) constructor  
-        pygame.sprite.Sprite.__init__(self)
-    
-        self.font = pygame.font.SysFont("Arial", size)
-        self.textSurf = self.font.render(text, 1, color)
-        # to get a transparent rect
-        self.image = pygame.Surface((width, height), pygame.SRCALPHA) 
-        self.image.fill((255,255,255,0)) # notice the alpha value in the color
-        screen.blit(self.image, (0,0))
-        self.rect = self.image.get_rect()
-        self.rect.x = 0
-        self.rect.y = 0
-        W = self.textSurf.get_width()
-        H = self.textSurf.get_height()
-        self.image.blit(self.textSurf, [width/2 - W/2, height/2 - H/2])
-        self.time = -1
 
 #création de groupes pour lancer les éléments dans la fenêtre
 all_sprites = pygame.sprite.Group()
@@ -666,9 +682,6 @@ bullets = pygame.sprite.Group()
 player = Player()
 all_sprites.add(player)
 ennemi = createMinion() 
-#all_sprites.add(ennemi)
-# for i in range (8):
-#     newEnnemi()
 
 score=0
 #Met la musique de fond en boucle
@@ -683,7 +696,11 @@ def draw_text(surf, text, size, color, x, y):
     text_rect.midtop = (x, y)
     surf.blit(text_surface, text_rect)
 
-# Boucle du jeu
+
+#-----------------------------------------------------------------------------------------
+# BOUCLE DU JEU
+#-----------------------------------------------------------------------------------------
+
 game_over = True
 running = True
 prev_time = pygame.time.get_ticks()
@@ -698,7 +715,7 @@ while running:
     
         #AJOUTE
         tab_degat_arme.append(player.attack)
-        init_duration_game = getExponentialLaw(1/6000)/1000 # durée de vie initiale de l'arme en sec (A REMPLACER)
+        init_duration_game = getExponentialLaw(1/60) # durée de vie initiale de l'arme en sec
         duration_game = init_duration_game # durée de vie de l'arme en secondes pourra être augmentée par des âchats
         # Temps après quoi le boss apparaît
         r_boss = random.random()
@@ -754,7 +771,11 @@ while running:
     #Avant apparition_boss, les ennemis sont des minion, après ce sont des boss
     if(math.floor(prev_time/1000)-math.floor(pygame.time.get_ticks()/1000)!=0):
         r = random.random()
-        probabilities_ennemi, results_ennemi = getProbabilitiesPoisson(1)
+        if(difficulty == 2):
+            x = 5
+        else : 
+            x = 1
+        probabilities_ennemi, results_ennemi = getProbabilitiesPoisson(x)
         n = getResult(r, results_ennemi, probabilities_ennemi)
         tab_freq_app.append(n)
         for i in range (0,n):
@@ -802,8 +823,8 @@ while running:
         text.rect.y = hit.rect.y
         text.time = pygame.time.get_ticks()
         bullets_damages.add(text)
-        all_sprites.add(text)
-        
+        all_sprites.add(text) 
+
     #collision des astéroides et du player
     hits = pygame.sprite.spritecollide(player, Ennemis, True, pygame.sprite.collide_circle)
     #vérifie s'il y a une collision
@@ -855,10 +876,7 @@ while running:
         
     pygame.draw.rect(screen, TURQUOISE, pygame.Rect(0, HEIGHT, WIDTH, INFO_H))
     draw_text(screen, "SCORE : " + str(score), 18, BLACK, WIDTH / 2, 10)
-    # draw_text(screen, str(player.shield), 18, WHITE, 130, 0)
-    # draw_shield_bar(screen, 5, 5, player.shield, 100)
 
-    #AJOUTE
     draw_text(screen, "Temps restant : " + convertMsecToMinSec(duration_game*1000-pygame.time.get_ticks() + start), 18, BLACK, WIDTH/2, 30)
     draw_text(screen, "(3 pour améliorer)", 14, BLACK, WIDTH/2, 50)
     # Affiche la durée de l'apparition des superaléas
@@ -874,11 +892,7 @@ while running:
     draw_text(screen, "Points de vie : " + str(player.shield), 18, WHITE, 70, h1)
     draw_shield_bar(screen, 12, h1 + 25, player.shield, 100)
     draw_text(screen, "Précision : " + str(player.accuracy), 18, WHITE, 205, h1)
-    # draw_text(screen, "(1 pour améliorer)", 14, WHITE, 205, h1 + 20)
     draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+20) + "]", 18, WHITE, 320, h1)
-    # draw_text(screen, " (2 pour améliorer)", 14, WHITE, 320, h1 + 20)
-    
-    # draw_text(screen, "Dernière attaque : " + str(player.attack), 18, 80, 160)
     
     if(prev_time > message.time+1000):
         all_sprites.remove(message)
