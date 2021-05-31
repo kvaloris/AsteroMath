@@ -515,7 +515,10 @@ def afficheAlea(player, message) :
         duration_game += liste[1]
 
     else :
-        player.money += liste[1] 
+        if(player.money + liste[1] < 0):
+            player.money = 0
+        else : 
+            player.money += liste[1] 
 
 
 #-----------------------------------------------------------------------------------------
