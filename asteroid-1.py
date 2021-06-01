@@ -107,6 +107,7 @@ for expl_sound in expl_sounds:
 
 tab_degat_arme = []
 tab_freq_app = []
+tab_accuracy = []
 
 #liste des aleas
 listeAlea = [
@@ -216,6 +217,7 @@ class Player(pygame.sprite.Sprite):
     def shoot(self):
         now = pygame.time.get_ticks()
         r = random.random()
+        tab_accuracy.append(r)
         if r > self.accuracy :
             if now - self.last_shot > self.shoot_delay:
                 self.last_shot = now
@@ -663,7 +665,8 @@ def show_stats_screen():
     ev4, sd4 = statsPoisson(1) # Fréquence moyenne d'apparition des aléas, 1 par sec
     ev5, sd5 = statsContinuousUniform(init_duration_game/2, init_duration_game) # Temps d'apparition des boss
 
-    m1 = sum(tab_degat_arme) / len(tab_degat_arme)
+    m1 = sum(tab_accuracy) / len(tab_accuracy)
+    m2 = sum(tab_degat_arme) / len(tab_degat_arme)
     m4 = sum(tab_freq_app) / len(tab_freq_app)
 
     pygame.draw.rect(screen, TURQUOISE, pygame.Rect(0, 0, WIDTH, HEIGHT+INFO_H))
@@ -671,9 +674,9 @@ def show_stats_screen():
     d = 40
     draw_text(screen, "Statistiques", 64, WHITE, WIDTH / 2, d-60 + HEIGHT / 13)
     draw_text(screen, "Fonctionnement de l'arme", 22, WHITE, WIDTH / 2, d+HEIGHT*2/13)
-    draw_text(screen, "Espérance : " + str(round(ev1, 2)) + "  Ecart-type : " + str(round(sd1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*3/13)
+    draw_text(screen, "Espérance : " + str(round(ev1, 2)) + "  Ecart-type : " + str(round(sd1, 2)) + "   Moyenne réelle : " + str(round(m1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*3/13)
     draw_text(screen, "Dégâts de l'arme", 22, WHITE, WIDTH / 2, d+HEIGHT*4/13)
-    draw_text(screen, "Espérance : " + str(round(ev2, 2)) + "   Ecart-type : " + str(round(sd2, 2)) + "   Moyenne réelle : " + str(round(m1, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*5/13)
+    draw_text(screen, "Espérance : " + str(round(ev2, 2)) + "   Ecart-type : " + str(round(sd2, 2)) + "   Moyenne réelle : " + str(round(m2, 2)), 18, WHITE, WIDTH / 2, d-10+HEIGHT*5/13)
     draw_text(screen, "Durée de vie intiale de l'arme (en sec)", 22, WHITE, WIDTH / 2, d+HEIGHT*6/13)
     draw_text(screen, "Espérance : " + str(round(ev3, 2)) + "   Ecart-type : " + str(round(sd3, 2)) + "   Valeur réelle : " + str(init_duration_game), 18, WHITE, WIDTH / 2, d-10+HEIGHT*7/13)
     draw_text(screen, "Fréquence d'apparition des aléas (par sec)", 22, WHITE, WIDTH / 2, d+HEIGHT*8/13)
