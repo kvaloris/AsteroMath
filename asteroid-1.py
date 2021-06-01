@@ -99,6 +99,11 @@ for snd in ['expl3.wav', 'expl6.wav']:
     expl_sounds.append(pygame.mixer.Sound(os.path.join(snd_dir, snd)))
 pygame.mixer.music.load(os.path.join(snd_dir, 'tgfcoder-FrozenJam-SeamlessLoop.mp3'))
 pygame.mixer.music.set_volume(0.01)
+gun_sound.set_volume(0.01)
+shoot_sound.set_volume(0.01)
+player_explosion_sound.set_volume(0.01)
+for expl_sound in expl_sounds:
+    expl_sound.set_volume(0.01);
 
 tab_degat_arme = []
 tab_freq_app = []
@@ -162,7 +167,7 @@ class Player(pygame.sprite.Sprite):
             self.accuracy = 0.6
             self.interval = 20
         self.attack = 30
-        self.money = 0
+        self.money = 5000
         self.strength = 30
 
     def update(self):
@@ -903,7 +908,7 @@ while running:
     if(time_boss >= 0):
         draw_text(screen, "Temps avant apparition des superaléas : " + convertMsecToMinSec(time_boss), 18, BLACK, WIDTH/2, 70)
     # Affiche l'argent du joueur
-    lower_attack = player.strength-20
+    lower_attack = player.strength-player.interval
     if(lower_attack<=0):
         lower_attack = 0
     h1 = HEIGHT + 20
@@ -911,7 +916,7 @@ while running:
     draw_text(screen, "Points de vie : " + str(player.shield), 18, WHITE, 70, h1)
     draw_shield_bar(screen, 12, h1 + 25, player.shield, 100)
     draw_text(screen, "Précision : " + str(player.accuracy), 18, WHITE, 205, h1)
-    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+20) + "]", 18, WHITE, 320, h1)
+    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+player.interval) + "]", 18, WHITE, 320, h1)
     
     if(prev_time > message.time+1000):
         all_sprites.remove(message)
