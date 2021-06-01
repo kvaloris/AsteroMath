@@ -709,6 +709,7 @@ game_over = True
 running = True
 prev_time = pygame.time.get_ticks()
 show_stats = False
+pause = False
 
 while running:
     #si le joueur a perdu et souhaite rejouer, les éléments sont recréés
@@ -749,7 +750,12 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYUP:
-            #Achète une amélioration de précision
+            #Achète une amélioration de temps
+            if event.key == pygame.K_KP0:
+                if(pause == True):
+                    pause = False
+                else:
+                    pause = True
             if event.key == pygame.K_KP3:
                     cost = 100
                     if(prev_time >= message.time+1500):
@@ -791,9 +797,10 @@ while running:
     prev_time = pygame.time.get_ticks()
 
     #Mise à jour
-    all_sprites.update()
-    
-
+    if(pause == False):
+        all_sprites.update()
+    if(pause == True):
+        pygame.time.delay(5000)
         
     #collision des astéroides avec le laser   
     hits = pygame.sprite.groupcollide(Ennemis, bullets, False, True)
