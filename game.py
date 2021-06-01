@@ -216,11 +216,14 @@ class Player(pygame.sprite.Sprite):
     #définition de la fonction permettant de tirer    
     def shoot(self):
         now = pygame.time.get_ticks()
-        r = random.random()
-        tab_accuracy.append(r)
-        if r > self.accuracy :
-            if now - self.last_shot > self.shoot_delay:
-                self.last_shot = now
+        
+        if now - self.last_shot > self.shoot_delay:
+            r = random.random()
+            tab_accuracy.append(r)
+            print("\n"+str(r));
+            self.last_shot = now
+            if r < self.accuracy :
+                print("success");
                 #production d'une météorite si le bonus = 1
                 if self.power == 1:
                     bullet = Bullet(self.rect.centerx-2, self.rect.top) # self.rect.centerx
