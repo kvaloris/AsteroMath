@@ -42,7 +42,7 @@ pygame.mixer.init()
 #définition de la fenêtre
 screen = pygame.display.set_mode((WIDTH, HEIGHT + INFO_H))
 #nom de la fenêtre
-pygame.display.set_caption("asteroid")
+pygame.display.set_caption("C'est balaud")
 clock = pygame.time.Clock()
 POWERUP_TIME = 5000
 
