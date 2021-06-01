@@ -112,16 +112,16 @@ tab_accuracy = []
 #liste des aleas
 listeAlea = [
     ["Votre appartement a pris feu", -50, "money"],
-    ["Votre petit(e)-ami(e) romp avec vous", -5, "time"],
+    ["Votre petit(e)-ami(e) romp avec vous", -3, "time"],
     ["Votre mère décide de vous rendre visite", +100, "money"],
-    ["La banque décide de saisir vos biens", -300, "money"],
-    ["Vous avez pris un coup de vieux", -3, "time"]
+    ["La banque décide de saisir vos biens", -100, "money"],
+    ["Vous avez pris un coup de vieux", -1, "time"]
 ]
 
 listeDiff = [
-    ["Burn-out à cause de l'IMAC", -2, "time"],
-    ["On vous a viré comme un malpropre", -100, "money"],
-    ["Vous n'auriez pas dû manger ça...", -1, "time"]
+    ["Burn-out à cause de l'IMAC", -3, "time"],
+    ["On vous a viré comme un malpropre", -300, "money"],
+    ["Vous n'auriez pas dû manger ça...", -5, "time"]
 ]
 
 difficulty = 0
