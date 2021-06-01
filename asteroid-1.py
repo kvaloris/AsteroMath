@@ -87,12 +87,10 @@ for i in range(9):
 
 #définition des images à utiliser pour les powerups
 powerup_images = {}
-powerup_images['shield'] = pygame.image.load(os.path.join(img_folder, 'shield_gold.png')).convert()
 powerup_images['gun'] = pygame.image.load(os.path.join(img_folder, 'bolt_gold.png')).convert()
 
 # Chargement de tous les musiques et effets sonores
 snd_dir = os.path.join(game_folder, 'snd')
-shield_sound = pygame.mixer.Sound(os.path.join(snd_dir, 'shield.wav'))
 gun_sound = pygame.mixer.Sound(os.path.join(snd_dir, 'gun.wav'))
 shoot_sound = pygame.mixer.Sound(os.path.join(snd_dir, 'pew.wav'))
 player_explosion_sound = pygame.mixer.Sound(os.path.join(snd_dir, 'explosion.wav'))
@@ -415,7 +413,7 @@ class Explosion(pygame.sprite.Sprite):
 class Bonus(pygame.sprite.Sprite):
     def __init__(self, center):
         pygame.sprite.Sprite.__init__(self)
-        self.type = random.choice(['shield', 'gun'])
+        self.type = 'gun'
         self.image = powerup_images[self.type]
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
@@ -485,7 +483,7 @@ def show_go_screen():
     draw_text(screen, "en main votre destin ! Terrassez-les tous !", 22, WHITE, WIDTH / 2, 150+h)
     draw_text(screen, "Flèches pour se déplacer, Espace pour tirer", 22, WHITE, WIDTH / 2, 250+h)
     draw_text(screen, "Appuyez sur 2 pour choisir le mode HELL", 18, WHITE, WIDTH / 2, 300+h)
-    draw_text(screen, "Appuyez sur une touche pour commencer", 18, WHITE, WIDTH / 2, 350+h)
+    draw_text(screen, "Appuyez sur 1 pour choisir le mode normal", 18, WHITE, WIDTH / 2, 350+h)
     pygame.display.flip()
     waiting = True
     while waiting:
@@ -497,7 +495,9 @@ def show_go_screen():
                 if event.key == pygame.K_KP2:
                     difficulty = 2
                     listeAlea += listeDiff
+                    waiting = False
                 else :
+                    difficulty = 1
                     waiting = False
 
 def createMinion():
@@ -520,7 +520,19 @@ def afficheAlea(player, message) :
         else : 
             player.money += liste[1] 
 
-
+def pause() : 
+    loop = 1
+    while loop : 
+        for event in pygame.event.get() : 
+            if event.type == pygame.QUIT:
+                loop = 0
+            if event.type == pygame.KEYDOWN :
+                if event.key == pygame.K_ESCAPE:
+                    loop == 0
+                if event.key == pygame.K_SPACE:
+                    loop == 0
+        pygame.display.update()
+        clock.tick(60)
 #-----------------------------------------------------------------------------------------
 # METHODES MATHEMATIQUES
 #-----------------------------------------------------------------------------------------
@@ -580,7 +592,6 @@ def convertMsecToMinSec(millis):
     #hours=(millis/(1000*60*60))%24
     return str(minutes) + ":" + str(seconds)
 
-#AJOUTE KEZIAH
 def getUniformPond(liste):
     r = random.random()
     listeProb = [1/len(liste)] * len(liste)
@@ -750,6 +761,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYUP:
+            #Achète une amélioration de précision
+            if event.key == pygame.K_KP6:
+                pause()
             #Achète une amélioration de temps
             if event.key == pygame.K_KP0:
                 if(pause == True):
@@ -757,20 +771,20 @@ while running:
                 else:
                     pause = True
             if event.key == pygame.K_KP3:
-                    cost = 100
-                    if(prev_time >= message.time+1500):
+                cost = 100
+                if(prev_time >= message.time+1500):
 
-                        if(cost > player.money):
-                            message.text = "Manque "+str(cost-player.money)+" pts"
-                        else:
-                            duration_game += 10 #en sec
-                            player.money -= cost
-                            message.text = "+10s"
-                            
-                        if(prev_time > message.time+1500):
-                            message.time = pygame.time.get_ticks()
-                            all_sprites.add(message)
-    
+                    if(cost > player.money):
+                        message.text = "Manque "+str(cost-player.money)+" pts"
+                    else:
+                        duration_game += 10 #en sec
+                        player.money -= cost
+                        message.text = "+10s"
+                        
+                    if(prev_time > message.time+1500):
+                        message.time = pygame.time.get_ticks()
+                        all_sprites.add(message)
+
 
     if(pygame.time.get_ticks() - start >= duration_game*1000):
         show_stats = True
@@ -860,12 +874,6 @@ while running:
     hits = pygame.sprite.spritecollide(player, powerups, True)
     #vérifie s'il y a une collision
     for hit in hits:
-        #augmente le bouclier si le bonus est de type bouclier
-        #if hit.type == 'shield':
-            #player.shield += random.randrange(10, 30)
-            #if player.shield >= 100
-                #player.shield = 100
-            #shield_sound.play()
         #augmente la puissance du tir si le bonus est de type tir
         if hit.type == 'gun':
             player.powerup()
@@ -895,7 +903,7 @@ while running:
     if(time_boss >= 0):
         draw_text(screen, "Temps avant apparition des superaléas : " + convertMsecToMinSec(time_boss), 18, BLACK, WIDTH/2, 70)
     # Affiche l'argent du joueur
-    lower_attack = player.strength-player.interval
+    lower_attack = player.strength-20
     if(lower_attack<=0):
         lower_attack = 0
     h1 = HEIGHT + 20
@@ -903,7 +911,7 @@ while running:
     draw_text(screen, "Points de vie : " + str(player.shield), 18, WHITE, 70, h1)
     draw_shield_bar(screen, 12, h1 + 25, player.shield, 100)
     draw_text(screen, "Précision : " + str(player.accuracy), 18, WHITE, 205, h1)
-    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+player.interval) + "]", 18, WHITE, 320, h1)
+    draw_text(screen, "Attaque : [" + str(lower_attack) + ", " + str(player.strength+20) + "]", 18, WHITE, 320, h1)
     
     if(prev_time > message.time+1000):
         all_sprites.remove(message)
