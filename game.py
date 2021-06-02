@@ -668,7 +668,9 @@ def show_stats_screen():
     ev4, sd4 = statsPoisson(1) # Fréquence moyenne d'apparition des aléas, 1 par sec
     ev5, sd5 = statsContinuousUniform(init_duration_game/2, init_duration_game) # Temps d'apparition des boss
 
-    m1 = sum(tab_accuracy) / len(tab_accuracy)
+    m1 = player.accuracy;
+    if(len(tab_accuracy) > 0):
+        m1 = sum(tab_accuracy) / len(tab_accuracy)
     m2 = sum(tab_degat_arme) / len(tab_degat_arme)
     m4 = sum(tab_freq_app) / len(tab_freq_app)
 
